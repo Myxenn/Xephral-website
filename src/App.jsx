@@ -68,7 +68,7 @@ function Navbar() {
               {label}
             </a>
           ))}
-          <a href="#contact"
+          <a href="https://calendly.com/dee-xephral/30min" target="_blank" rel="noopener noreferrer"
             className="magnetic-btn inline-flex items-center gap-1.5 text-sm font-body font-semibold px-5 py-2.5 rounded-full transition-colors duration-200 cursor-pointer"
             style={{ background: '#f59e0b', color: '#080600' }}>
             Book a call
@@ -199,7 +199,7 @@ function Hero() {
           Custom automations for local service businesses. We handle the calls, follow-ups, and reviews.
         </p>
         <div className="hero-cta" style={{ opacity: 0, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
-          <a href="#contact"
+          <a href="https://calendly.com/dee-xephral/30min" target="_blank" rel="noopener noreferrer"
             className="magnetic-btn inline-flex items-center gap-2 font-body font-semibold text-sm px-7 py-3.5 rounded-full cursor-pointer"
             style={{ background: '#f59e0b', color: '#080600' }}>
             Book a Call <ArrowRight size={14} />
@@ -621,7 +621,7 @@ function Availability() {
                 style={{ fontSize: '15px', color: '#78716c', margin: 0 }}>
                 Every system is built custom. That means limited capacity by design. If you're serious about fixing your lead pipeline, the window to start is now.
               </p>
-              <a href="#contact"
+              <a href="https://calendly.com/dee-xephral/30min" target="_blank" rel="noopener noreferrer"
                 className="magnetic-btn inline-flex items-center gap-2 font-body font-semibold text-sm px-7 py-3.5 rounded-full self-start"
                 style={{ background: '#f59e0b', color: '#080600' }}>
                 Book a Call <ArrowRight size={14} />
