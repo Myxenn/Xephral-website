@@ -884,8 +884,8 @@ function Contact() {
       const data = new FormData(e.target)
       const res = await fetch('https://formspree.io/f/xvzjaqna', {
         method: 'POST',
-        body: data,
-        headers: { Accept: 'application/json' },
+        body: JSON.stringify(Object.fromEntries(data)),
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
       })
       if (res.ok) {
         setFormStatus('success')
