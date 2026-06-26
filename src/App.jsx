@@ -882,7 +882,7 @@ function Contact() {
     setFormStatus('submitting')
     try {
       const data = new FormData(e.target)
-      const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+      const res = await fetch('https://formspree.io/f/xvzjaqna', {
         method: 'POST',
         body: data,
         headers: { Accept: 'application/json' },
