@@ -624,7 +624,7 @@ function Availability() {
               <a href="#contact"
                 className="magnetic-btn inline-flex items-center gap-2 font-body font-semibold text-sm px-7 py-3.5 rounded-full self-start"
                 style={{ background: '#f59e0b', color: '#080600' }}>
-                Claim a spot <ArrowRight size={14} />
+                Book a Call <ArrowRight size={14} />
               </a>
             </div>
           </div>
@@ -1075,7 +1075,7 @@ function Contact() {
                   transition: 'background 0.3s ease, color 0.3s ease',
                 }}
               >
-                {formStatus === 'submitting' ? 'Sending...' : <>Book My Free Strategy Call <ArrowUpRight size={15} /></>}
+                {formStatus === 'submitting' ? 'Sending...' : <>Send Message <ArrowUpRight size={15} /></>}
               </button>
             </form>
             )}
