@@ -1,1148 +1,574 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import {
-  ArrowUpRight,
-  ArrowRight,
-  Menu,
-  X,
-  Bot,
-  Zap,
-  Video,
-  Calendar,
-  Database,
-  BarChart3,
-  MessageSquare,
-  Mail,
-  MapPin,
-  ShieldCheck,
-  Clock,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Cpu,
-} from 'lucide-react'
+import { SplitText } from 'gsap/SplitText'
+import Lenis from 'lenis'
+import { ArrowUpRight, ArrowRight, Menu, X } from 'lucide-react'
 
-try { gsap.registerPlugin(ScrollTrigger) } catch (_) {}
+try { gsap.registerPlugin(ScrollTrigger, SplitText) } catch (_) {}
 
-/* ----------------------------------------------------------------
-   Nav Links & Services Data
----------------------------------------------------------------- */
-const NAV_LINKS = [
-  { label: 'Home', href: '#home' },
-  { label: 'Services', href: '#services' },
-  { label: 'Results', href: '#results' },
-  { label: 'Process', href: '#process' },
-  { label: 'Contact', href: '#contact' },
-]
+/* ─── SIGNAL X LOGO ───────────────────────────────────────── */
+function XLogo({ className, style }) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Diagonal strokes — butt caps so they meet the terminal bars cleanly */}
+      <line x1="8"  y1="6.5" x2="24" y2="25.5" stroke="currentColor" strokeWidth="2"   strokeLinecap="butt"/>
+      <line x1="24" y1="6.5" x2="8"  y2="25.5" stroke="currentColor" strokeWidth="2"   strokeLinecap="butt"/>
+      {/* Terminal horizontal bars — 8px wide, one at each of the 4 arm tips */}
+      <line x1="4"  y1="6.5"  x2="12" y2="6.5"  stroke="currentColor" strokeWidth="2"   strokeLinecap="round"/>
+      <line x1="20" y1="6.5"  x2="28" y2="6.5"  stroke="currentColor" strokeWidth="2"   strokeLinecap="round"/>
+      <line x1="4"  y1="25.5" x2="12" y2="25.5" stroke="currentColor" strokeWidth="2"   strokeLinecap="round"/>
+      <line x1="20" y1="25.5" x2="28" y2="25.5" stroke="currentColor" strokeWidth="2"   strokeLinecap="round"/>
+    </svg>
+  )
+}
 
-const SERVICES_FULL = [
-  {
-    icon: Bot,
-    title: 'AI Voice Agents',
-    text: 'AI-powered callers that follow up with every lead instantly — 24/7, no missed calls, no missed deals.',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Lead Follow-Up Automation',
-    text: 'Automated sequences that nurture cold leads into booked appointments without lifting a finger.',
-  },
-  {
-    icon: Calendar,
-    title: 'Appointment Booking Systems',
-    text: 'Self-scheduling pipelines that fill your calendar while you focus on delivering the work.',
-  },
-  {
-    icon: Database,
-    title: 'CRM Integration & Setup',
-    text: 'Connect your tools into one unified system — Go High Level, HubSpot, or custom stacks.',
-  },
-  {
-    icon: Video,
-    title: 'Content Production Systems',
-    text: 'AI-assisted pipelines for YouTube, short-form, and social content at scale with minimal effort.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics & Reporting',
-    text: "Clear dashboards showing what's working, what's not, and exactly where your revenue is coming from.",
-  },
-]
-
-const TOOLS = [
-  { name: 'n8n', logo: null },
-  { name: 'ElevenLabs', logo: null },
-  { name: 'Claude AI', logo: null },
-  { name: 'Make.com', logo: null },
-  { name: 'Go High Level', logo: null },
-  { name: 'Zapier', logo: null },
-  { name: 'OpenAI', logo: null },
-  { name: 'Airtable', logo: null },
-]
-
-/* ----------------------------------------------------------------
-   Navbar
----------------------------------------------------------------- */
+/* ─── NAVBAR ─────────────────────────────────────────────── */
 function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
+  const navRef = useRef(null)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80)
+    const el = navRef.current
+    gsap.fromTo(el, { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'power3.out' })
+
+    const onScroll = () => {
+      if (window.scrollY > 40) {
+        el.style.background = 'rgba(8,6,0,0.9)'
+        el.style.backdropFilter = 'blur(20px)'
+        el.style.borderBottom = '1px solid rgba(245,158,11,0.08)'
+      } else {
+        el.style.background = 'transparent'
+        el.style.backdropFilter = 'none'
+        el.style.borderBottom = '1px solid transparent'
+      }
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
-    <>
-      <nav
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ${
-          scrolled ? 'glass shadow-lg shadow-primary/10' : 'bg-transparent'
-        } rounded-full px-4 sm:px-6 py-2.5 w-[calc(100%-2rem)] max-w-5xl`}
-      >
-        <div className="flex items-center justify-between gap-6">
-          <a href="#home" className="flex items-center gap-2.5 group">
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40">
-              <Cpu className="h-4.5 w-4.5 text-white" strokeWidth={2.2} />
-              <span className="absolute inset-0 rounded-full ring-2 ring-primary/30 group-hover:ring-primary/60 transition-all duration-300" />
-            </span>
-            <span className="font-display font-bold tracking-tight text-lg text-white transition-colors">
-              Xephral
-            </span>
-          </a>
+    <nav ref={navRef} className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 transition-all duration-300">
+      <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <a href="#home" className="flex items-center gap-2.5 group">
+          <XLogo className="w-6 h-6 transition-colors duration-200"
+            style={{ color: '#f59e0b' }} />
+          <span className="font-mono tracking-[0.14em] text-sm font-medium" style={{ color: '#fdfaf0' }}>XEPHRAL</span>
+        </a>
 
-          <div className="hidden lg:flex items-center gap-7">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium tracking-tight lift-on-hover text-white/70 hover:text-white transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          <a
-            href="#contact"
-            className="hidden lg:inline-flex magnetic-btn items-center gap-1.5 bg-primary text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg shadow-primary/40"
-          >
-            Book a Call
-            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
-          </a>
-
-          <button
-            onClick={() => setOpen(true)}
-            className="lg:hidden p-2 rounded-full text-white"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile menu */}
-      <div
-        className={`fixed inset-0 z-[60] transition-all duration-500 lg:hidden ${
-          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        <div className="absolute inset-0 bg-deep/90 backdrop-blur-2xl" onClick={() => setOpen(false)} />
-        <div
-          className={`absolute top-0 left-0 right-0 bg-surface rounded-b-5xl px-6 pt-8 pb-12 transition-transform duration-500 border-b border-divider ${
-            open ? 'translate-y-0' : '-translate-y-full'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-10">
-            <span className="font-display font-bold text-xl text-ink">Xephral</span>
-            <button onClick={() => setOpen(false)} className="p-2 rounded-full bg-divider/40">
-              <X className="h-5 w-5 text-ink" />
-            </button>
-          </div>
-          <div className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="font-display text-3xl font-semibold text-ink py-3 border-b border-divider"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-          <a
-            href="#contact"
-            onClick={() => setOpen(false)}
-            className="mt-8 magnetic-btn flex items-center justify-center gap-2 bg-primary text-white px-6 py-4 rounded-full font-semibold w-full"
-          >
-            Book a Free Strategy Call
-            <ArrowUpRight className="h-4 w-4" />
+        <div className="hidden md:flex items-center gap-8">
+          {[
+            { label: 'Home',     href: '#home' },
+            { label: 'Services', href: '#services' },
+            { label: 'FAQ',      href: '#faq' },
+            { label: 'Contact',  href: '#contact' },
+          ].map(({ label, href }) => (
+            <a key={label} href={href}
+              className="text-muted hover:text-ink text-sm font-body transition-colors duration-200 cursor-pointer">
+              {label}
+            </a>
+          ))}
+          <a href="#contact"
+            className="magnetic-btn inline-flex items-center gap-1.5 text-sm font-body font-semibold px-5 py-2.5 rounded-full transition-colors duration-200 cursor-pointer"
+            style={{ background: '#f59e0b', color: '#080600' }}>
+            Book a call
           </a>
         </div>
+
+        <button className="md:hidden text-muted hover:text-ink transition-colors cursor-pointer"
+          onClick={() => setOpen(v => !v)} aria-label="Toggle menu">
+          {open ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
-    </>
+
+      {open && (
+        <div className="md:hidden mt-4 px-4 pb-4 flex flex-col gap-4 border-t pt-4"
+          style={{ borderColor: 'rgba(245,158,11,0.12)' }}>
+          {[
+            { label: 'Home',     href: '#home' },
+            { label: 'Services', href: '#services' },
+            { label: 'FAQ',      href: '#faq' },
+            { label: 'Contact',  href: '#contact' },
+          ].map(({ label, href }) => (
+            <a key={label} href={href}
+              onClick={() => setOpen(false)}
+              className="text-muted hover:text-ink text-sm font-body transition-colors duration-200 cursor-pointer">
+              {label}
+            </a>
+          ))}
+          <a href="#contact"
+            className="text-sm font-body font-semibold px-5 py-2.5 rounded-full text-center"
+            style={{ background: '#f59e0b', color: '#080600' }}>
+            Book a call
+          </a>
+        </div>
+      )}
+    </nav>
   )
 }
 
-/* ----------------------------------------------------------------
-   Hero
----------------------------------------------------------------- */
+/* ─── HERO ────────────────────────────────────────────────── */
 function Hero() {
-  const heroRef = useRef(null)
+  const textRef = useRef(null)
+  const cueRef = useRef(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.from('.hero-line-1', { y: 40, opacity: 0, duration: 1, delay: 0.3, ease: 'power3.out' })
-      gsap.from('.hero-line-2', { y: 60, opacity: 0, duration: 1.2, delay: 0.5, ease: 'power3.out' })
-      gsap.from('.hero-cta, .hero-meta', { y: 24, opacity: 0, duration: 0.8, delay: 0.8, stagger: 0.12, ease: 'power3.out' })
-      gsap.from('.hero-badge', { y: 20, opacity: 0, duration: 0.6, delay: 0.2, ease: 'power3.out' })
-    }, heroRef)
+      gsap.fromTo('.hero-eyebrow', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, delay: 0.5, ease: 'power3.out' })
+      // SplitText word-by-word reveal on the headline
+      const split = SplitText.create('.hero-headline', { type: 'words' })
+      gsap.set('.hero-headline', { opacity: 1 })
+      gsap.fromTo(split.words,
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.65, stagger: 0.04, delay: 0.72, ease: 'power2.out' }
+      )
+      gsap.fromTo('.hero-sub',  { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, delay: 1.3,  ease: 'power3.out' })
+      gsap.fromTo('.hero-cta',  { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, delay: 1.55, ease: 'power3.out' })
+    }, textRef)
+
+    const onScroll = () => {
+      if (cueRef.current) {
+        cueRef.current.style.opacity = Math.max(0, 1 - window.scrollY / (window.innerHeight * 0.3)).toString()
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { ctx.revert(); window.removeEventListener('scroll', onScroll) }
+  }, [])
+
+  return (
+    <section id="home" style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden', background: '#080600' }}>
+
+      {/* Ambient glow orbs — pure CSS animation, no JS */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute',
+          width: '65vw', height: '65vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(245,158,11,0.13) 0%, transparent 70%)',
+          top: '-15%', left: '-10%',
+          animation: 'glowDriftA 14s ease-in-out infinite alternate',
+        }} />
+        <div style={{
+          position: 'absolute',
+          width: '50vw', height: '50vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(217,119,6,0.09) 0%, transparent 70%)',
+          bottom: '-20%', right: '-5%',
+          animation: 'glowDriftB 18s ease-in-out infinite alternate',
+        }} />
+        <div style={{
+          position: 'absolute',
+          width: '35vw', height: '35vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(251,191,36,0.06) 0%, transparent 70%)',
+          top: '40%', left: '55%',
+          animation: 'glowDriftA 22s ease-in-out infinite alternate-reverse',
+        }} />
+      </div>
+
+      {/* Text block */}
+      <div ref={textRef}
+        style={{
+          position: 'relative', zIndex: 10,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          height: '100%', textAlign: 'center',
+          padding: '0 24px', maxWidth: '900px', margin: '0 auto',
+        }}>
+        <p className="hero-eyebrow font-mono uppercase mb-6"
+          style={{ opacity: 0, fontSize: '11px', letterSpacing: '0.22em', color: '#f59e0b' }}>
+          AI Automation Agency
+        </p>
+        <h1 className="hero-headline font-serif italic font-medium text-balance"
+          style={{
+            opacity: 0,
+            fontSize: 'clamp(36px, 5.4vw, 70px)',
+            lineHeight: 1.08,
+            letterSpacing: '-0.01em',
+            color: '#fdfaf0',
+            marginBottom: '24px',
+          }}>
+          We build the machine that runs your business while you run your jobs.
+        </h1>
+        <p className="hero-sub font-body leading-relaxed mb-10"
+          style={{
+            opacity: 0,
+            fontSize: 'clamp(15px, 1.6vw, 18px)',
+            color: '#78716c',
+            maxWidth: '480px',
+          }}>
+          Custom automations for local service businesses. We handle the calls, follow-ups, and reviews.
+        </p>
+        <div className="hero-cta" style={{ opacity: 0, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+          <a href="#contact"
+            className="magnetic-btn inline-flex items-center gap-2 font-body font-semibold text-sm px-7 py-3.5 rounded-full cursor-pointer"
+            style={{ background: '#f59e0b', color: '#080600' }}>
+            Book a Call <ArrowRight size={14} />
+          </a>
+          <a href="#how-it-works"
+            className="inline-flex items-center gap-1.5 font-body text-sm transition-colors duration-200 cursor-pointer"
+            style={{ color: '#78716c' }}
+            onMouseOver={e => e.currentTarget.style.color = '#fdfaf0'}
+            onMouseOut={e => e.currentTarget.style.color = '#78716c'}>
+            See how it works <ArrowUpRight size={14} />
+          </a>
+        </div>
+      </div>
+
+      {/* Scroll cue */}
+      <div ref={cueRef} style={{
+        position: 'absolute', bottom: '32px', left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+        zIndex: 10, pointerEvents: 'none',
+        transition: 'opacity 0.2s ease',
+      }}>
+        <div style={{
+          width: '1px', height: '48px',
+          background: 'linear-gradient(to bottom, rgba(245,158,11,0.7), transparent)',
+          animation: 'scrollLinePulse 2s ease-in-out infinite',
+        }} />
+        <span style={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '8px', letterSpacing: '0.24em',
+          textTransform: 'uppercase',
+          color: 'rgba(245,158,11,0.4)',
+        }}>scroll</span>
+      </div>
+    </section>
+  )
+}
+
+/* ─── STATS STRIP ─────────────────────────────────────────── */
+const STATS = [
+  { value: '< 60s', label: 'First response time' },
+  { value: '100%',  label: 'Leads followed up' },
+  { value: '24/7',  label: 'System uptime' },
+]
+
+function StatsStrip() {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.stat-item', { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.15, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 85%' } })
+    }, ref)
     return () => ctx.revert()
   }, [])
 
   return (
-    <section id="home" ref={heroRef} className="relative min-h-[100dvh] w-full overflow-hidden bg-background flex items-center">
-      {/* Ambient gradient orbs */}
-      <div className="absolute top-[-15%] left-[-8%] w-[600px] h-[600px] rounded-full bg-primary/18 blur-[130px] animate-float-slower pointer-events-none" />
-      <div className="absolute top-[5%] right-[-12%] w-[500px] h-[500px] rounded-full bg-primary-dark/22 blur-[110px] animate-float-slow pointer-events-none" style={{ animationDelay: '3s' }} />
-      <div className="absolute bottom-[5%] left-[15%] w-[450px] h-[450px] rounded-full bg-accent/8 blur-[150px] animate-float pointer-events-none" style={{ animationDelay: '6s' }} />
-      <div className="absolute bottom-[20%] right-[5%] w-[300px] h-[300px] rounded-full bg-primary/12 blur-[100px] animate-float-slow pointer-events-none" style={{ animationDelay: '1.5s' }} />
-
-      {/* Top + bottom decorative borders */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-
-      {/* Grid overlay */}
-      <div className="absolute inset-0 grid-bg opacity-40" />
-
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 pt-32 pb-20 flex flex-col items-center text-center">
-        <div className="hero-badge mb-8 inline-flex items-center gap-2 glass-light rounded-full px-4 py-2">
-          <span className="h-2 w-2 rounded-full bg-accent ring-pulse" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/70">
-            AI Automation for Local Businesses
-          </span>
-        </div>
-
-        <h1 className="font-display font-bold text-white tracking-tight leading-[0.95] max-w-4xl">
-          <span className="hero-line-1 block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl">
-            Automate Follow-Up,
-          </span>
-          <span className="hero-line-2 block font-serif italic font-medium text-primary-light text-5xl sm:text-6xl lg:text-7xl xl:text-8xl mt-2" style={{ lineHeight: '0.95' }}>
-            Booking & Conversion.
-          </span>
-        </h1>
-
-        <p className="hero-meta mt-8 max-w-xl text-white/75 text-base sm:text-lg leading-relaxed">
-          I build AI-powered systems for local service businesses. More leads closed, zero extra headcount.{' '}
-          <span className="text-white/90">Your pipeline, finally running itself.</span>
-        </p>
-
-        <div className="hero-cta mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="#contact"
-            className="magnetic-btn inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-4 rounded-full font-semibold text-base shadow-2xl shadow-primary/40"
-          >
-            Book a Free Strategy Call
-            <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
-          </a>
-          <a
-            href="#services"
-            className="magnetic-btn inline-flex items-center justify-center gap-2 glass-light text-white px-8 py-4 rounded-full font-semibold text-base"
-          >
-            See What I Build
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-
-        <div className="hero-meta mt-16 flex items-center gap-8 text-white/30">
-          <div className="h-px w-16 bg-white/20" />
-          <span className="font-mono text-[10px] uppercase tracking-[0.25em]">Scroll to explore</span>
-          <div className="h-px w-16 bg-white/20" />
-        </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-white/30">
-        <div className="h-10 w-px bg-gradient-to-b from-white/40 to-transparent" />
-      </div>
-    </section>
-  )
-}
-
-/* ----------------------------------------------------------------
-   Industry Strip
----------------------------------------------------------------- */
-const INDUSTRIES = [
-  'Roofing', 'HVAC', 'Plumbing', 'Dental', 'Med Spa', 'Law Firms',
-  'Contractors', 'Auto Repair', 'Home Services', 'Real Estate', 'Landscaping', 'Insurance',
-]
-
-function ToolsBar() {
-  const doubled = [...INDUSTRIES, ...INDUSTRIES]
-  return (
-    <section className="relative py-10 border-y border-divider overflow-hidden bg-surface/30">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
-      </div>
-      <p className="text-center font-mono text-[10px] uppercase tracking-[0.25em] text-muted mb-6">
-        Built for local service businesses
-      </p>
-      <div className="flex animate-scroll-left" style={{ width: 'max-content' }}>
-        {doubled.map((industry, idx) => (
-          <div
-            key={idx}
-            className="mx-8 flex items-center gap-3 whitespace-nowrap"
-          >
-            <span className="h-1 w-1 rounded-full bg-primary/40" />
-            <span className="font-display font-semibold text-sm tracking-tight text-white/50 hover:text-white/80 transition-colors cursor-default">
-              {industry}
+    <div ref={ref} style={{
+      background: '#080600',
+      borderTop: '1px solid rgba(245,158,11,0.12)',
+      borderBottom: '1px solid rgba(245,158,11,0.12)',
+    }}>
+      <div style={{
+        maxWidth: '900px', margin: '0 auto',
+        padding: '48px 24px',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+      }}>
+        {STATS.map((s, i) => (
+          <div key={i} className="stat-item" style={{
+            opacity: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+            padding: '0 24px',
+            borderRight: i < 2 ? '1px solid rgba(245,158,11,0.1)' : 'none',
+          }}>
+            <span style={{
+              fontFamily: '"Cormorant Garamond", serif',
+              fontSize: 'clamp(34px, 4.5vw, 54px)',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              color: '#f59e0b',
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
+            }}>
+              {s.value}
+            </span>
+            <span style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '10px',
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#78716c',
+              textAlign: 'center',
+            }}>
+              {s.label}
             </span>
           </div>
         ))}
       </div>
-    </section>
-  )
-}
-
-/* ----------------------------------------------------------------
-   Feature Card 1 — Call Scenario Shuffler (AI Voice Agents)
----------------------------------------------------------------- */
-function VoiceShuffler() {
-  const scenarios = [
-    {
-      tag: 'Missed Call',
-      label: 'AI calls back within 60 seconds',
-      value: '<60s',
-      bars: [8, 5, 10, 6, 12, 4, 9, 7, 11, 5, 8, 6, 10, 4, 7, 9, 5, 11, 6, 8],
-    },
-    {
-      tag: 'Lead Inquiry',
-      label: 'Qualifies prospect & books appointment',
-      value: '9 of 10',
-      bars: [5, 9, 4, 11, 6, 8, 10, 5, 7, 12, 4, 9, 6, 8, 5, 10, 7, 4, 11, 6],
-    },
-    {
-      tag: 'Follow-Up',
-      label: 'Re-engages cold leads automatically',
-      value: '3x lift',
-      bars: [10, 6, 8, 4, 12, 7, 5, 9, 6, 10, 4, 8, 11, 5, 7, 6, 9, 4, 10, 8],
-    },
-  ]
-  const [stack, setStack] = useState(scenarios)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStack((prev) => {
-        const next = [...prev]
-        next.unshift(next.pop())
-        return next
-      })
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [])
-
-  return (
-    <div className="relative h-44 w-full">
-      {stack.map((item, i) => {
-        const total = stack.length
-        return (
-          <div
-            key={item.tag}
-            style={{
-              transform: `translate(${i * 12}px, ${i * 12}px) scale(${1 - i * 0.05})`,
-              zIndex: total - i,
-              opacity: 1 - i * 0.28,
-              transition: 'transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease',
-            }}
-            className="absolute inset-0 bg-surface border border-divider rounded-3xl p-5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-full">
-                {item.tag}
-              </span>
-              <span className="font-mono text-xs text-accent font-semibold">{item.value}</span>
-            </div>
-            <div className="mt-4 font-display text-base font-semibold text-ink leading-tight">
-              {item.label}
-            </div>
-            <div className="mt-3 flex items-center gap-1">
-              {item.bars.map((w, idx) => (
-                <span
-                  key={idx}
-                  className="h-1 rounded-full"
-                  style={{
-                    width: `${w}px`,
-                    background: idx < 14 - i * 3 ? '#8B5CF6' : '#27272A',
-                    opacity: idx < 14 - i * 3 ? 1 : 0.4,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )
-      })}
     </div>
   )
 }
 
-/* ----------------------------------------------------------------
-   Feature Card 2 — Tech Signature Animation (Automation Pipelines)
----------------------------------------------------------------- */
-function PipelineAnim() {
-  const [statusIdx, setStatusIdx] = useState(0)
-  const [count, setCount] = useState(42)
+/* ─── SERVICES ────────────────────────────────────────────── */
+const SERVICES_DATA = [
+  {
+    number: '01',
+    title: 'Lead Response',
+    description: 'The first business to respond wins the job. Missed call text-back, AI voice agents, and instant follow-up sequences so every lead gets contacted within 60 seconds, 24/7.',
+    tags: ['AI Voice Agent', 'Missed Call Text-Back', 'Instant Follow-Up'],
+  },
+  {
+    number: '02',
+    title: 'Automated Follow-Up',
+    description: "Most businesses give up after one attempt. Yours won't. Multi-touch campaigns follow up via text and email until the lead books, buys, or opts out without your team lifting a finger.",
+    tags: ['Lead Nurturing', 'SMS Sequences', 'Email Automation'],
+  },
+  {
+    number: '03',
+    title: 'Reputation & Retention',
+    description: 'Turn every happy client into your next five. Onboarding sequences that impress from day one, review requests that land at exactly the right moment, and referral automations that run on their own.',
+    tags: ['Review Requests', 'Onboarding', 'Referral Systems'],
+  },
+]
 
-  const statuses = [
-    { text: 'All systems nominal', label: 'Live', tone: 'emerald' },
-    { text: 'New lead detected · routing', label: 'Active', tone: 'primary' },
-    { text: 'Pipeline executing · step 3/5', label: 'Running', tone: 'primary' },
-    { text: 'Lead booked · CRM updated', label: 'Done', tone: 'emerald' },
-  ]
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStatusIdx((idx) => {
-        const next = (idx + 1) % statuses.length
-        if (statuses[next].label === 'Done') setCount((c) => c + 1)
-        return next
-      })
-    }, 2300)
-    return () => clearInterval(interval)
-  }, [])
-
-  const drops = [
-    { left: '12%', delay: '0.0s', dur: '2.6s', size: 15 },
-    { left: '24%', delay: '1.1s', dur: '2.9s', size: 12 },
-    { left: '37%', delay: '0.5s', dur: '2.7s', size: 16 },
-    { left: '52%', delay: '1.7s', dur: '2.4s', size: 13 },
-    { left: '65%', delay: '0.8s', dur: '3.0s', size: 15 },
-    { left: '78%', delay: '2.1s', dur: '2.6s', size: 12 },
-    { left: '90%', delay: '0.3s', dur: '2.8s', size: 14 },
-  ]
-
-  const ripples = [
-    { left: '22%', delay: '0.2s' },
-    { left: '52%', delay: '1.0s' },
-    { left: '80%', delay: '1.8s' },
-  ]
-
-  const status = statuses[statusIdx]
-  const toneText = status.tone === 'emerald' ? 'text-emerald-400' : 'text-primary-light'
-  const toneDot = status.tone === 'emerald' ? 'bg-emerald-400' : 'bg-primary'
+function ServiceCard({ svc }) {
+  const [hovered, setHovered] = useState(false)
 
   return (
     <div
-      className="relative h-44 w-full rounded-3xl overflow-hidden border border-divider"
-      style={{ background: 'linear-gradient(180deg, #1A1040 0%, #120D30 70%, #0A0820 100%)' }}
+      className="svc-item"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        opacity: 0,
+        position: 'relative',
+        padding: '40px 0 44px',
+        cursor: 'default',
+      }}
     >
-      {/* Atmosphere */}
-      <div className="absolute -top-6 -left-4 h-16 w-28 rounded-full bg-primary/20 blur-2xl" />
-      <div className="absolute top-1 right-8 h-12 w-20 rounded-full bg-accent/10 blur-xl" />
+      {/* Top rule — glows and bleeds left on hover */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: hovered
+          ? 'linear-gradient(to right, rgba(245,158,11,0.9) 0%, rgba(245,158,11,0.3) 55%, transparent 100%)'
+          : 'rgba(245,158,11,0.1)',
+        boxShadow: hovered ? '0 0 14px rgba(245,158,11,0.35)' : 'none',
+        transition: 'background 0.5s ease, box-shadow 0.5s ease',
+      }} />
 
-      {/* Header strip */}
-      <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-20">
-        <div className="flex items-center gap-2">
-          <Zap className="h-3 w-3 text-primary-light" strokeWidth={2.2} />
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary-light">
-            Automation Engine
-          </span>
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span className="font-display font-bold text-sm text-ink tabular-nums">
-            {String(count).padStart(2, '0')}
-          </span>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-muted">leads</span>
-        </div>
-      </div>
-
-      {/* Server rack SVG */}
-      <svg className="absolute left-3 right-3 top-9 h-5" viewBox="0 0 400 20" preserveAspectRatio="none">
-        <rect x="0" y="4" width="400" height="12" rx="3" fill="#8B5CF6" fillOpacity="0.15" />
-        <rect x="0" y="5" width="400" height="2" fill="#A78BFA" fillOpacity="0.3" />
-        {[50, 130, 210, 290, 370].map((x) => (
-          <g key={x}>
-            <rect x={x - 4} y="2" width="8" height="4" rx="1" fill="#8B5CF6" fillOpacity="0.6" />
-            <circle cx={x} cy="14" r="2" fill="#22D3EE" fillOpacity="0.7" />
-          </g>
-        ))}
-      </svg>
-
-      {/* Falling code brackets */}
-      <div className="absolute inset-x-0 top-14 bottom-11 overflow-hidden">
-        {drops.map((d, i) => (
-          <svg
-            key={i}
-            className="absolute top-0"
-            style={{
-              left: d.left,
-              width: `${d.size}px`,
-              height: `${Math.round(d.size * 1.6)}px`,
-              animation: `rain-fall ${d.dur} cubic-bezier(0.55,0.05,0.7,0.45) ${d.delay} infinite`,
-              filter: 'drop-shadow(0 0 4px rgba(139,92,246,0.5))',
-              transform: 'translateX(-50%)',
-            }}
-            viewBox="0 0 24 36"
-          >
-            <defs>
-              <linearGradient id={`code-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#A78BFA" />
-                <stop offset="60%" stopColor="#8B5CF6" />
-                <stop offset="100%" stopColor="#7C3AED" />
-              </linearGradient>
-            </defs>
-            <text x="12" y="26" textAnchor="middle" fill={`url(#code-${i})`} fontSize="18" fontFamily="JetBrains Mono, monospace" fontWeight="600">
-              {i % 3 === 0 ? '<' : i % 3 === 1 ? '/>' : '{}'}
-            </text>
-          </svg>
-        ))}
-      </div>
-
-      {/* Terminal surface line */}
-      <svg className="absolute bottom-9 left-3 right-3 h-3" viewBox="0 0 200 12" preserveAspectRatio="none">
-        <line x1="0" y1="6" x2="200" y2="6" stroke="#8B5CF6" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="4 4" />
-        <line x1="0" y1="8" x2="200" y2="8" stroke="#22D3EE" strokeOpacity="0.15" strokeWidth="0.8" />
-      </svg>
-
-      {/* Scan ripples */}
-      <div className="absolute bottom-[34px] left-3 right-3 h-2">
-        {ripples.map((r, i) => (
-          <span
-            key={i}
-            className="absolute top-0 -translate-x-1/2 rounded-full border border-primary/50"
-            style={{
-              left: r.left,
-              width: '4px',
-              height: '4px',
-              animation: `rain-ripple 2.4s ease-out ${r.delay} infinite`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Bottom status */}
-      <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-20">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`relative h-2 w-2 rounded-full ${toneDot}`}>
-            {status.tone !== 'emerald' && (
-              <span className={`absolute inset-0 rounded-full ${toneDot} animate-ping`} />
-            )}
-          </span>
-          <span
-            key={status.text}
-            className={`font-mono text-[10px] truncate ${toneText}`}
-            style={{ animation: 'rain-fadein 0.35s ease-out' }}
-          >
-            {status.text}
-          </span>
-        </div>
-        <span className={`font-mono text-[9px] uppercase tracking-[0.2em] whitespace-nowrap pl-2 ${toneText}`}>
-          {status.label}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-/* ----------------------------------------------------------------
-   Feature Card 3 — Content Calendar Scheduler
----------------------------------------------------------------- */
-function ContentScheduler() {
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-  const [step, setStep] = useState(0)
-  const activeDay = 3
-
-  useEffect(() => {
-    const interval = setInterval(() => setStep((prev) => (prev + 1) % 5), 1400)
-    return () => clearInterval(interval)
-  }, [])
-
-  const cursorPos = (() => {
-    switch (step) {
-      case 0: return { x: 8, y: 110, opacity: 0 }
-      case 1: return { x: 55, y: 60, opacity: 1 }
-      case 2: return { x: 55 + activeDay * 34, y: 60, opacity: 1 }
-      case 3: return { x: 55 + activeDay * 34, y: 60, opacity: 1 }
-      case 4: return { x: 120, y: 128, opacity: 1 }
-      default: return { x: 8, y: 110, opacity: 0 }
-    }
-  })()
-
-  return (
-    <div className="relative h-44 w-full bg-surface border border-divider rounded-3xl p-5 overflow-hidden">
-      <div className="flex items-center justify-between mb-3">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
-          Content Queue · Jun
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-          Auto-Schedule
-        </span>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1.5 mb-3">
-        {days.map((d, idx) => (
-          <div
-            key={idx}
-            className={`flex flex-col items-center justify-center h-9 rounded-xl text-xs font-medium transition-all duration-300 ${
-              step >= 3 && idx === activeDay
-                ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/40'
-                : 'bg-background/60 text-ink/70'
-            }`}
-          >
-            <span className="font-mono text-[9px] text-muted">{d}</span>
-            <span className="font-display font-semibold text-sm">{idx + 9}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr min-content', gap: '24px', alignItems: 'flex-start' }}>
+        {/* Left: content */}
+        <div>
+          {/* Eyebrow: number + dash */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <span style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '9px', letterSpacing: '0.22em',
+              color: hovered ? '#f59e0b' : 'rgba(245,158,11,0.4)',
+              transition: 'color 0.3s ease',
+            }}>
+              {svc.number}
+            </span>
+            <div style={{
+              height: '1px', width: '22px',
+              background: hovered ? 'rgba(245,158,11,0.55)' : 'rgba(245,158,11,0.14)',
+              transition: 'background 0.3s ease',
+            }} />
           </div>
-        ))}
-      </div>
 
-      <button
-        className={`w-full py-2 rounded-2xl font-medium text-xs transition-all duration-300 ${
-          step === 4
-            ? 'bg-primary text-white scale-[1.02] shadow-md shadow-primary/40'
-            : 'bg-divider/50 text-muted'
-        }`}
-      >
-        {step >= 3 ? '✓ Video scheduled & queued' : 'Select publish date'}
-      </button>
+          {/* Title — dominant, goes amber on hover */}
+          <h3 style={{
+            fontFamily: '"Cormorant Garamond", serif',
+            fontSize: 'clamp(34px, 3.8vw, 52px)',
+            fontStyle: 'italic', fontWeight: 500,
+            lineHeight: 1.05, letterSpacing: '-0.01em',
+            color: hovered ? '#f59e0b' : '#fdfaf0',
+            margin: '0 0 18px 0',
+            transition: 'color 0.4s ease',
+          }}>
+            {svc.title}
+          </h3>
 
-      <div
-        className="absolute pointer-events-none transition-all duration-500 ease-out"
-        style={{
-          left: `${cursorPos.x}px`,
-          top: `${cursorPos.y}px`,
-          opacity: cursorPos.opacity,
-          transform: step === 3 ? 'scale(0.85)' : 'scale(1)',
-        }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M5 3L19 12L12 13L9 20L5 3Z" fill="#FAFAFA" stroke="#8B5CF6" strokeWidth="1.5" strokeLinejoin="round" />
-        </svg>
+          {/* Description */}
+          <p style={{
+            fontFamily: '"Inter", sans-serif',
+            fontSize: '15px', color: '#78716c',
+            lineHeight: 1.78, margin: '0 0 22px 0',
+            maxWidth: '560px',
+          }}>
+            {svc.description}
+          </p>
+
+          {/* Tags — dot-separated inline, no pill borders */}
+          <p style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '10px', letterSpacing: '0.1em',
+            color: hovered ? 'rgba(245,158,11,0.65)' : 'rgba(120,113,108,0.55)',
+            margin: 0,
+            transition: 'color 0.35s ease',
+          }}>
+            {svc.tags.join(' · ')}
+          </p>
+        </div>
+
+        {/* Right: ghost number — large Cormorant italic serif, not mono */}
+        <span style={{
+          fontFamily: '"Cormorant Garamond", serif',
+          fontSize: 'clamp(72px, 9vw, 112px)',
+          fontStyle: 'italic', fontWeight: 400, lineHeight: 1,
+          color: 'transparent',
+          WebkitTextStroke: `1px ${hovered ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.06)'}`,
+          userSelect: 'none', whiteSpace: 'nowrap',
+          paddingTop: '6px',
+          transition: '-webkit-text-stroke 0.4s ease',
+        }}>
+          {svc.number}
+        </span>
       </div>
     </div>
   )
 }
 
-/* ----------------------------------------------------------------
-   Features Section
----------------------------------------------------------------- */
-function Features() {
+function Services() {
   const sectionRef = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = sectionRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  const cards = [
-    {
-      eyebrow: '01 / Voice',
-      heading: 'AI Voice Agents',
-      sub: 'Never miss a lead again',
-      text: 'AI-powered callers that respond to every missed call within 60 seconds — qualifying prospects, answering questions, and booking appointments while you sleep.',
-      Component: VoiceShuffler,
-    },
-    {
-      eyebrow: '02 / Automation',
-      heading: 'Automation Pipelines',
-      sub: 'Your pipeline, running itself',
-      text: 'End-to-end automation that captures, nurtures, and converts leads — from first touch to booked appointment, with zero manual follow-up required.',
-      Component: PipelineAnim,
-    },
-    {
-      eyebrow: '03 / Content',
-      heading: 'Content Systems',
-      sub: 'Scale without the grind',
-      text: 'AI-assisted content pipelines that produce YouTube videos, shorts, and social content consistently — without the hours of manual production work.',
-      Component: ContentScheduler,
-    },
-  ]
-
-  return (
-    <section id="what-i-build" ref={sectionRef} className="relative py-28 sm:py-40 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-7xl mx-auto">
-        <div className={`max-w-3xl mb-16 sm:mb-24 transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">
-            ╱ What I Build
-          </span>
-          <h2 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-ink mt-4 leading-[1.05] tracking-tight">
-            Three systems.
-            <span className="block font-serif italic font-medium text-primary-light mt-1">
-              One goal.
-            </span>
-          </h2>
-          <p className="mt-6 text-muted text-lg leading-relaxed max-w-xl">
-            Built for local service businesses that can't afford to lose a single lead.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {cards.map((card, idx) => (
-            <article
-              key={idx}
-              style={{ transitionDelay: visible ? `${idx * 120}ms` : '0ms' }}
-              className={`group relative bg-surface border border-divider rounded-5xl p-7 hover:border-primary/40 transition-all duration-700 ease-out hover:shadow-xl hover:shadow-primary/10 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-                  {card.eyebrow}
-                </span>
-                <ArrowUpRight className="h-5 w-5 text-muted/40 group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" strokeWidth={1.8} />
-              </div>
-
-              <card.Component />
-
-              <div className="mt-6">
-                <h3 className="font-display font-bold text-xl text-ink leading-tight">{card.heading}</h3>
-                <p className="font-serif italic text-primary-light text-sm mt-1">{card.sub}</p>
-                <p className="text-muted text-[15px] mt-4 leading-relaxed">{card.text}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ----------------------------------------------------------------
-   CountUp
----------------------------------------------------------------- */
-function CountUp({ target, duration = 1800 }) {
-  const [count, setCount] = useState(0)
-  const elemRef = useRef(null)
-  const startedRef = useRef(false)
-
-  useEffect(() => {
-    const el = elemRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !startedRef.current) {
-            startedRef.current = true
-            const startTime = performance.now()
-            const animate = (now) => {
-              const elapsed = now - startTime
-              const progress = Math.min(elapsed / duration, 1)
-              const eased = 1 - Math.pow(1 - progress, 3)
-              setCount(Math.floor(target * eased))
-              if (progress < 1) requestAnimationFrame(animate)
-              else setCount(target)
-            }
-            requestAnimationFrame(animate)
-          }
-        })
-      },
-      { threshold: 0.35 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [target, duration])
-
-  return <span ref={elemRef}>{count}</span>
-}
-
-/* ----------------------------------------------------------------
-   Pillars — Results & Social Proof
----------------------------------------------------------------- */
-function Pillars() {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { threshold: 0.15 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  const pillars = [
-    {
-      n: '01',
-      title: 'Speed',
-      target: 60,
-      suffix: 's',
-      label: 'avg lead response time',
-      desc: 'AI voice agents respond to every missed call in under 60 seconds — before your competitor even checks their inbox.',
-    },
-    {
-      n: '02',
-      title: 'Scale',
-      target: 100,
-      suffix: '%',
-      label: 'follow-ups automated',
-      desc: 'Every lead touched, every time. No dropped balls, no forgotten follow-ups, no revenue left on the table.',
-    },
-    {
-      n: '03',
-      title: 'Timeline',
-      target: 7,
-      suffix: ' days',
-      label: 'average deploy time',
-      desc: 'Most systems go live in 7 business days. You start closing more leads before the month is out.',
-    },
-  ]
-
-  return (
-    <section id="results" ref={ref} className="relative py-28 sm:py-40 px-6 sm:px-10 lg:px-16 overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-30" />
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-64 w-[44rem] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-
-      <div className="relative max-w-7xl mx-auto">
-        <div className={`flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16 sm:mb-24 transition-all duration-1000 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <div className="max-w-2xl">
-            <span className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-primary mb-5">
-              ╱ The Numbers
-            </span>
-            <h2 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-ink leading-[1.05] tracking-tight">
-              Built for businesses
-              <span className="block font-serif italic font-medium text-primary-light">that can't afford to miss.</span>
-            </h2>
-          </div>
-          <p className="text-muted text-lg leading-relaxed max-w-md lg:text-right">
-            Real outcomes. Not promises. Every system is built around moving these numbers in your favor.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-divider rounded-5xl overflow-hidden border border-divider">
-          {pillars.map((p, i) => (
-            <article
-              key={i}
-              style={{ transitionDelay: visible ? `${i * 150}ms` : '0ms' }}
-              className={`relative bg-surface p-9 sm:p-12 group overflow-hidden transition-all duration-1000 ease-out hover:bg-surface/80 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-            >
-              <div className="flex items-center justify-between mb-10">
-                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
-                  {p.n} / {p.title}
-                </span>
-                <span className="h-1.5 w-1.5 rounded-full bg-primary/40 group-hover:bg-primary group-hover:scale-150 transition-all duration-500" />
-              </div>
-
-              <div className="flex items-end gap-1 leading-none">
-                <span className="font-display font-bold text-[5rem] sm:text-[7rem] md:text-[8rem] leading-[0.85] text-ink tabular-nums tracking-tight">
-                  <CountUp target={p.target} duration={1800 + i * 200} />
-                </span>
-                <span className="font-serif italic font-medium text-3xl sm:text-4xl text-primary-light mb-3">
-                  {p.suffix}
-                </span>
-              </div>
-
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-primary mt-5">{p.label}</p>
-              <p className="text-muted text-[15px] mt-6 leading-relaxed max-w-xs">{p.desc}</p>
-
-              <div className="absolute bottom-0 left-9 right-9 sm:left-12 sm:right-12 h-px bg-divider overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-transparent via-primary to-transparent"
-                  style={{ animation: `pillar-sweep 4s ease-in-out ${i * 0.4}s infinite` }}
-                />
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ----------------------------------------------------------------
-   Protocol — How It Works (Sticky Stack)
----------------------------------------------------------------- */
-function Protocol() {
-  const containerRef = useRef(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const cards = gsap.utils.toArray('.protocol-card')
-      cards.forEach((card, i) => {
-        if (i === cards.length - 1) return
-        gsap.to(card, {
-          scrollTrigger: {
-            trigger: card,
-            start: 'top top+=100',
-            endTrigger: cards[cards.length - 1],
-            end: 'top top+=120',
-            scrub: 1,
-          },
-          scale: 0.93,
-          filter: 'blur(4px) saturate(0.6)',
-          opacity: 0.45,
-          ease: 'none',
-        })
+      gsap.fromTo('.svc-label', { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out',
+          scrollTrigger: { trigger: '.svc-label', start: 'top 85%' } })
+      gsap.fromTo('.svc-headline', { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '.svc-headline', start: 'top 85%' } })
+      document.querySelectorAll('.svc-item').forEach((el, i) => {
+        gsap.fromTo(el, { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, duration: 0.7, delay: i * 0.14, ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 88%' } })
       })
-    }, containerRef)
+    }, sectionRef)
     return () => ctx.revert()
   }, [])
 
-  const steps = [
-    {
-      num: '01',
-      title: 'Discovery Call',
-      tagline: 'We map your pipeline.',
-      text: 'We spend 30 minutes understanding your current lead flow — where they come in, where they fall off, and what a missed lead costs you. No pitch, just honest diagnosis.',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-      alt: 'Circuit board — AI systems',
-      meta: 'Step 1 / Discover',
-    },
-    {
-      num: '02',
-      title: 'Build & Configure',
-      tagline: 'Custom to your workflow.',
-      text: 'I build the automation, voice agent, or content system to your exact specifications — integrated with your existing tools. You review it before anything goes live.',
-      image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1200&q=80',
-      alt: 'Tech code — building automation',
-      meta: 'Step 2 / Build',
-    },
-    {
-      num: '03',
-      title: 'Launch & Optimize',
-      tagline: 'Go live, then refine.',
-      text: "We launch your system, monitor the first week closely, and make adjustments to maximize conversion. 30 days of support included — you're never left holding the bag.",
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-      alt: 'Analytics dashboard',
-      meta: 'Step 3 / Launch',
-    },
-  ]
-
   return (
-    <section id="process" ref={containerRef} className="relative px-4 sm:px-6 py-20">
-      <div className="max-w-7xl mx-auto mb-16 px-2 sm:px-10">
-        <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">
-          ╱ How It Works
-        </span>
-        <h2 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl text-ink mt-4 leading-[1.05] tracking-tight max-w-3xl">
-          Three steps.
-          <span className="block font-serif italic font-medium text-primary-light">
-            No surprises.
-          </span>
+    <section ref={sectionRef} className="relative py-28 md:py-36 px-6 md:px-14"
+      style={{ background: '#080600' }}>
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'radial-gradient(circle, rgba(245,158,11,0.11) 1px, transparent 1px)',
+        backgroundSize: '38px 38px',
+        maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+      }} />
+
+      <div className="max-w-6xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+        <p className="svc-label font-mono text-xs tracking-[0.22em] uppercase mb-4"
+          style={{ opacity: 0, color: 'rgba(245,158,11,0.6)' }}>
+          What we build
+        </p>
+        <h2 className="svc-headline font-serif italic font-medium mb-14 leading-tight"
+          style={{ opacity: 0, fontSize: 'clamp(30px, 4.5vw, 52px)', color: '#fdfaf0', maxWidth: '520px', letterSpacing: '-0.01em' }}>
+          Three things.<br />Done right.
         </h2>
-      </div>
 
-      <div className="space-y-8">
-        {steps.map((step, idx) => (
-          <article
-            key={idx}
-            className="protocol-card sticky top-24 sm:top-28 mx-auto max-w-6xl bg-surface border border-divider rounded-6xl overflow-hidden"
-          >
-            <div className="grid lg:grid-cols-5 gap-0 min-h-[60vh] lg:min-h-[65vh]">
-              <div className="lg:col-span-3 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase tracking-[0.25em] text-muted">{step.meta}</span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    Xephral Protocol
-                  </span>
-                </div>
-
-                <div className="my-10">
-                  <span className="font-display font-bold text-[6rem] sm:text-[8rem] leading-none text-primary/10 -mb-4 block">
-                    {step.num}
-                  </span>
-                  <h3 className="font-display font-bold text-4xl sm:text-5xl text-ink leading-[1.02] tracking-tight">
-                    {step.title}
-                  </h3>
-                  <p className="font-serif italic text-primary-light text-2xl sm:text-3xl mt-3">{step.tagline}</p>
-                </div>
-
-                <p className="text-muted text-base sm:text-lg leading-relaxed max-w-lg">{step.text}</p>
-              </div>
-
-              <div className="lg:col-span-2 relative overflow-hidden min-h-[260px] lg:min-h-full">
-                <img
-                  src={step.image}
-                  alt={step.alt}
-                  className="absolute inset-0 w-full h-full object-cover brightness-50"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-surface via-transparent to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/20" />
-              </div>
-            </div>
-          </article>
-        ))}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {SERVICES_DATA.map((svc, i) => (
+            <ServiceCard key={i} svc={svc} />
+          ))}
+          {/* Closing rule */}
+          <div style={{ height: '1px', background: 'rgba(245,158,11,0.1)' }} />
+        </div>
       </div>
     </section>
   )
 }
 
-/* ----------------------------------------------------------------
-   Services Grid — All 6 Services
----------------------------------------------------------------- */
-function ServicesGrid() {
+/* ─── HOW IT WORKS ────────────────────────────────────────── */
+const STEPS = [
+  {
+    number: '01',
+    title: 'You share your goals.',
+    description: "Fill out a short intake form. Tell us your current setup, where leads are slipping through, and what you want automated.",
+  },
+  {
+    number: '02',
+    title: 'We build your system.',
+    description: "We design and build a custom automation stack tailored to your business — AI voice agents, follow-up sequences, review systems.",
+  },
+  {
+    number: '03',
+    title: 'Your business runs itself.',
+    description: "Your system goes live. Leads get called, followed up, and converted automatically while you stay focused on the work.",
+  },
+]
+
+function HowItWorks() {
   const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.hiw-label', { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out',
+          scrollTrigger: { trigger: '.hiw-label', start: 'top 85%' } })
+      gsap.fromTo('.hiw-headline', { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '.hiw-headline', start: 'top 85%' } })
+      gsap.fromTo('.hiw-step', { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.7, stagger: 0.18, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 75%' } })
+    }, ref)
+    return () => ctx.revert()
   }, [])
 
   return (
-    <section id="services" ref={ref} className="bg-deep py-28 sm:py-36 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-7xl mx-auto">
-        <div className={`mb-16 transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">╱ Full Service Menu</span>
-          <h2 className="font-display font-bold text-4xl sm:text-5xl text-ink mt-4 tracking-tight leading-tight">
-            Everything you need.
-            <span className="block font-serif italic font-medium text-primary-light">Nothing you don't.</span>
-          </h2>
-        </div>
+    <section id="how-it-works" ref={ref} className="relative py-24 md:py-32 px-6 md:px-14 overflow-hidden"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 60%, rgba(245,158,11,0.04) 0%, transparent 70%)' }} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 rounded-3xl overflow-hidden border border-divider">
-          {SERVICES_FULL.map((svc, idx) => (
-            <div
-              key={idx}
-              style={{ transitionDelay: visible ? `${idx * 80}ms` : '0ms' }}
-              className={`group bg-surface/60 p-8 sm:p-10 hover:bg-white/[0.04] transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-            >
-              <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-                <svc.icon className="h-5 w-5 text-primary" strokeWidth={2.2} />
-              </div>
-              <h3 className="font-display font-semibold text-lg text-ink mb-3">{svc.title}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{svc.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+      <div className="max-w-6xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+        <p className="hiw-label font-mono text-xs tracking-[0.22em] uppercase mb-4"
+          style={{ opacity: 0, color: 'rgba(245,158,11,0.6)' }}>
+          How it works
+        </p>
+        <h2 className="hiw-headline font-serif italic font-medium mb-16 leading-tight"
+          style={{ opacity: 0, fontSize: 'clamp(28px, 4vw, 50px)', color: '#fdfaf0', letterSpacing: '-0.01em', maxWidth: '480px' }}>
+          Three steps.<br />Then it runs forever.
+        </h2>
 
-/* ----------------------------------------------------------------
-   Trust Signals
----------------------------------------------------------------- */
-function TrustSignals() {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { threshold: 0.2 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  const badges = [
-    {
-      icon: Zap,
-      title: 'No Fluff Builds',
-      sub: 'Purpose-built automation, tailored to your exact workflow — no template spray-and-pray.',
-    },
-    {
-      icon: Clock,
-      title: 'Fast Deployment',
-      sub: 'Most systems go live within 7 business days from our first discovery call.',
-    },
-    {
-      icon: ShieldCheck,
-      title: '30-Day Support Window',
-      sub: 'Every build includes a full month of monitoring, tweaks, and optimization at no extra cost.',
-    },
-  ]
-
-  return (
-    <section ref={ref} className="py-24 sm:py-32 px-6 sm:px-10 lg:px-16 bg-surface/30">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">╱ Why Xephral</span>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl text-ink mt-4 tracking-tight">
-            What you can count on
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {badges.map((b, i) => (
-            <div
-              key={i}
-              style={{ transitionDelay: visible ? `${i * 100}ms` : '0ms' }}
-              className={`bg-surface border border-divider rounded-3xl p-8 hover:border-primary/30 hover:-translate-y-1 transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
-            >
-              <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
-                <b.icon className="h-5 w-5 text-primary" strokeWidth={2.2} />
-              </div>
-              <h3 className="font-display font-semibold text-lg text-ink mb-2">{b.title}</h3>
-              <p className="text-muted text-sm leading-relaxed">{b.sub}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ----------------------------------------------------------------
-   FAQ
----------------------------------------------------------------- */
-function FAQ() {
-  const [open, setOpen] = useState(null)
-
-  const faqs = [
-    {
-      q: "How is this different from just hiring a VA?",
-      a: "A VA works 8 hours a day and costs $800–$2K/month. An AI system works 24/7, responds in seconds, never calls in sick, and costs a fraction of that — with no ongoing salary. For high-volume follow-up and lead response, AI wins every time.",
-    },
-    {
-      q: "What kind of businesses do you work with?",
-      a: "Any local service business that depends on leads and appointments — contractors, roofers, HVAC companies, dental practices, med spas, agencies, law firms. If you have a phone that rings and leads that need follow-up, this is built for you.",
-    },
-    {
-      q: "How long does it take to get up and running?",
-      a: "Most systems are live within 7 business days of our discovery call. We scope the build together, I configure and test it, and we launch. You'll see results in the first week.",
-    },
-    {
-      q: "Do I need to be tech-savvy to use this?",
-      a: "No. Once it's live, your systems run themselves. You'll get a simple dashboard to monitor performance. I handle all the technical setup — your job is just to show up for the strategy call and answer a few questions about your business.",
-    },
-  ]
-
-  return (
-    <section id="faq" className="py-24 sm:py-32 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-14">
-          <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">╱ FAQ</span>
-          <h2 className="font-display font-bold text-3xl sm:text-4xl text-ink mt-4 tracking-tight">
-            Common questions
-          </h2>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((faq, i) => (
-            <div key={i} className="border border-divider rounded-2xl bg-surface overflow-hidden">
-              <button
-                onClick={() => setOpen(open === i ? null : i)}
-                className="w-full flex items-center justify-between p-6 text-left group"
-              >
-                <span className="font-display font-medium text-ink text-base leading-snug pr-4 group-hover:text-primary transition-colors">
-                  {faq.q}
-                </span>
-                <span className="flex-shrink-0 text-muted group-hover:text-primary transition-colors">
-                  {open === i ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                </span>
-              </button>
-              {open === i && (
-                <div className="px-6 pb-6">
-                  <p className="text-muted leading-relaxed text-[15px]">{faq.a}</p>
-                </div>
+        <div className="hiw-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0 64px' }}>
+          {STEPS.map((step, i) => (
+            <div key={i} className="hiw-step" style={{ opacity: 0, position: 'relative', paddingTop: '32px' }}>
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                background: 'linear-gradient(to right, rgba(245,158,11,0.6) 0%, rgba(245,158,11,0.12) 45%, transparent 100%)',
+              }} />
+              <span style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '9px', letterSpacing: '0.22em',
+                color: 'rgba(245,158,11,0.5)',
+                display: 'block', marginBottom: '20px',
+              }}>
+                {step.number}
+              </span>
+              <h3 style={{
+                fontFamily: '"Cormorant Garamond", serif',
+                fontSize: 'clamp(22px, 2.2vw, 30px)',
+                fontStyle: 'italic', fontWeight: 500,
+                color: '#fdfaf0', lineHeight: 1.15,
+                letterSpacing: '-0.01em',
+                margin: '0 0 16px 0',
+              }}>
+                {step.title}
+              </h3>
+              <p style={{
+                fontFamily: '"Inter", sans-serif',
+                fontSize: '14px', color: '#78716c',
+                lineHeight: 1.8, margin: 0,
+              }}>
+                {step.description}
+              </p>
+              {i < 2 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '58px', right: '-36px',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '11px', color: 'rgba(245,158,11,0.18)',
+                  userSelect: 'none', pointerEvents: 'none',
+                }}>→</span>
               )}
             </div>
           ))}
@@ -1152,203 +578,507 @@ function FAQ() {
   )
 }
 
-/* ----------------------------------------------------------------
-   Contact Form
----------------------------------------------------------------- */
-function FormField({ label, children }) {
+/* ─── AVAILABILITY ────────────────────────────────────────── */
+function Availability() {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.avail-content', { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 78%' } })
+    }, ref)
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">{label}</label>
-      {children}
+    <section ref={ref} className="relative py-24 md:py-28 px-6 md:px-14"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="avail-content" style={{ opacity: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {/* Top rule */}
+          <div style={{
+            height: '1px', marginBottom: '40px',
+            background: 'linear-gradient(to right, rgba(245,158,11,0.55) 0%, rgba(245,158,11,0.1) 40%, transparent 100%)',
+          }} />
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '32px' }}>
+            <div>
+              <p className="font-mono text-xs tracking-[0.22em] uppercase mb-5"
+                style={{ color: 'rgba(245,158,11,0.6)' }}>
+                Current availability
+              </p>
+              <h2 className="font-serif italic font-medium leading-tight"
+                style={{ fontSize: 'clamp(32px, 5vw, 68px)', color: '#fdfaf0', letterSpacing: '-0.02em', margin: 0 }}>
+                Taking on{' '}
+                <span style={{ color: '#f59e0b' }}>3 new clients</span>
+                <br />this month.
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '340px' }}>
+              <p className="font-body leading-relaxed"
+                style={{ fontSize: '15px', color: '#78716c', margin: 0 }}>
+                Every system is built custom. That means limited capacity by design. If you're serious about fixing your lead pipeline, the window to start is now.
+              </p>
+              <a href="#contact"
+                className="magnetic-btn inline-flex items-center gap-2 font-body font-semibold text-sm px-7 py-3.5 rounded-full self-start"
+                style={{ background: '#f59e0b', color: '#080600' }}>
+                Claim a spot <ArrowRight size={14} />
+              </a>
+            </div>
+          </div>
+
+          {/* Bottom rule */}
+          <div style={{
+            height: '1px', marginTop: '40px',
+            background: 'linear-gradient(to right, rgba(245,158,11,0.1), transparent)',
+          }} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── CAPABILITIES ────────────────────────────────────────── */
+const CAPABILITIES_DATA = [
+  { number: '01', title: 'AI Voice Agents',            desc: 'AI-powered callers that follow up with every lead instantly — 24/7, no missed calls, no missed deals.' },
+  { number: '02', title: 'Lead Follow-Up Automation',  desc: 'Automated sequences that nurture cold leads into booked appointments without lifting a finger.' },
+  { number: '03', title: 'Appointment Booking',        desc: 'Self-scheduling pipelines that fill your calendar while you focus on delivering the work.' },
+  { number: '04', title: 'CRM Integration & Setup',    desc: 'Connect your tools into one unified system — Go High Level, HubSpot, or custom stacks.' },
+  { number: '05', title: 'Content Production Systems', desc: 'AI-assisted pipelines for YouTube, short-form, and social content at scale with minimal effort.' },
+  { number: '06', title: 'Analytics & Reporting',      desc: "Clear dashboards showing what's working, what's not, and exactly where your revenue is coming from." },
+]
+
+function CapabilityItem({ item }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative', padding: '28px 0 32px', cursor: 'default' }}
+    >
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+        background: hovered
+          ? 'linear-gradient(to right, rgba(245,158,11,0.8), rgba(245,158,11,0.2), transparent)'
+          : 'rgba(245,158,11,0.1)',
+        boxShadow: hovered ? '0 0 10px rgba(245,158,11,0.3)' : 'none',
+        transition: 'background 0.4s ease, box-shadow 0.4s ease',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+        <span style={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '9px', letterSpacing: '0.2em',
+          color: hovered ? '#f59e0b' : 'rgba(245,158,11,0.4)',
+          transition: 'color 0.3s ease',
+        }}>{item.number}</span>
+        <div style={{
+          height: '1px', width: '18px',
+          background: hovered ? 'rgba(245,158,11,0.5)' : 'rgba(245,158,11,0.14)',
+          transition: 'background 0.3s ease',
+        }} />
+      </div>
+      <h3 style={{
+        fontFamily: '"Cormorant Garamond", serif',
+        fontSize: 'clamp(20px, 1.9vw, 26px)',
+        fontStyle: 'italic', fontWeight: 500,
+        color: hovered ? '#f59e0b' : '#fdfaf0',
+        lineHeight: 1.1, letterSpacing: '-0.005em',
+        margin: '0 0 10px 0',
+        transition: 'color 0.35s ease',
+      }}>{item.title}</h3>
+      <p style={{
+        fontFamily: '"Inter", sans-serif',
+        fontSize: '13px', color: '#78716c', lineHeight: 1.72, margin: 0,
+      }}>{item.desc}</p>
     </div>
   )
 }
 
-const contactInputClass = "bg-background border border-divider rounded-xl px-4 py-3 text-ink text-sm placeholder-muted focus:outline-none focus:border-primary transition-colors"
+function Capabilities() {
+  const ref = useRef(null)
 
-function ContactForm() {
-  const [status, setStatus] = useState('idle')
-  const [fields, setFields] = useState({ fullName: '', email: '', phone: '', industry: '', message: '', referral: '' })
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.cap-eyebrow', { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out',
+          scrollTrigger: { trigger: '.cap-eyebrow', start: 'top 85%' } })
+      gsap.fromTo('.cap-headline', { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '.cap-headline', start: 'top 85%' } })
+      gsap.fromTo('.cap-item', { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, stagger: 0.09, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 78%' } })
+    }, ref)
+    return () => ctx.revert()
+  }, [])
 
-  const canSubmit = fields.fullName.trim() && fields.email.trim() && fields.phone.trim()
+  return (
+    <section id="services" ref={ref} className="relative py-24 md:py-32 px-6 md:px-14"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="max-w-6xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+        <p className="cap-eyebrow font-mono text-xs tracking-[0.22em] uppercase mb-4"
+          style={{ opacity: 0, color: 'rgba(245,158,11,0.6)' }}>
+          Full service menu
+        </p>
+        <div className="cap-headline" style={{ opacity: 0, marginBottom: '52px' }}>
+          <h2 className="font-serif italic font-medium leading-tight"
+            style={{ fontSize: 'clamp(28px, 4vw, 50px)', color: '#fdfaf0', letterSpacing: '-0.01em', marginBottom: '4px' }}>
+            Everything you need.
+          </h2>
+          <h2 className="font-serif italic font-medium leading-tight"
+            style={{ fontSize: 'clamp(28px, 4vw, 50px)', color: 'rgba(245,158,11,0.55)', letterSpacing: '-0.01em' }}>
+            Nothing you don't.
+          </h2>
+        </div>
 
-  const onSubmit = async (e) => {
+        <div className="cap-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 80px' }}>
+          {CAPABILITIES_DATA.map((item, i) => (
+            <div key={i} className="cap-item" style={{ opacity: 0 }}>
+              <CapabilityItem item={item} />
+            </div>
+          ))}
+          <div style={{ height: '1px', background: 'rgba(245,158,11,0.1)' }} />
+          <div style={{ height: '1px', background: 'rgba(245,158,11,0.1)' }} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── FAQ ─────────────────────────────────────────────────── */
+const FAQ_DATA = [
+  {
+    q: 'How is this different from just hiring a VA?',
+    a: 'A VA costs $15–$25/hour, works set hours, and can only do one thing at a time. Our systems run 24/7, respond in under 60 seconds regardless of volume, and never call in sick. The economics and reliability are completely different.',
+  },
+  {
+    q: 'What kind of businesses do you work with?',
+    a: 'Primarily local service businesses — HVAC, roofing, dental, med spas, law firms, contractors, real estate. Any business where speed to lead and consistent follow-up determines who wins the job.',
+  },
+  {
+    q: 'How long does it take to get up and running?',
+    a: 'Most systems are live within 7–14 days. We handle the full build — no technical work required from you. You review, approve, and we launch.',
+  },
+  {
+    q: 'Do I need to be tech-savvy to use this?',
+    a: "No. Once built, the system runs itself. We build a simple dashboard so you can see what's happening, but you won't be touching any code or settings.",
+  },
+]
+
+function FAQItem({ item, isOpen, onToggle }) {
+  return (
+    <div style={{ borderTop: '1px solid rgba(245,158,11,0.1)' }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '26px 0', background: 'none', border: 'none',
+          cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <span style={{
+          fontFamily: '"Cormorant Garamond", serif',
+          fontSize: 'clamp(18px, 2vw, 24px)',
+          fontStyle: 'italic', fontWeight: 500,
+          color: isOpen ? '#f59e0b' : '#fdfaf0',
+          lineHeight: 1.2, paddingRight: '24px',
+          transition: 'color 0.3s ease',
+        }}>
+          {item.q}
+        </span>
+        <span style={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '18px', lineHeight: 1,
+          color: isOpen ? '#f59e0b' : 'rgba(245,158,11,0.4)',
+          transition: 'color 0.3s ease, transform 0.35s ease',
+          transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+          display: 'inline-block', flexShrink: 0,
+        }}>
+          +
+        </span>
+      </button>
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: isOpen ? '280px' : '0',
+        transition: 'max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
+        <p style={{
+          fontFamily: '"Inter", sans-serif',
+          fontSize: '15px', color: '#78716c',
+          lineHeight: 1.78, padding: '0 56px 28px 0', margin: 0,
+        }}>
+          {item.a}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.faq-header', { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out',
+          scrollTrigger: { trigger: '.faq-header', start: 'top 85%' } })
+      gsap.fromTo('.faq-list', { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+          scrollTrigger: { trigger: '.faq-list', start: 'top 85%' } })
+    }, ref)
+    return () => ctx.revert()
+  }, [])
+
+  return (
+    <section id="faq" ref={ref} className="relative py-24 md:py-32 px-6 md:px-14"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="max-w-4xl mx-auto">
+        <div className="faq-header" style={{ opacity: 0, marginBottom: '44px' }}>
+          <p className="font-mono text-xs tracking-[0.22em] uppercase mb-4"
+            style={{ color: 'rgba(245,158,11,0.6)' }}>
+            FAQ
+          </p>
+          <h2 className="font-serif italic font-medium leading-tight"
+            style={{ fontSize: 'clamp(28px, 4vw, 48px)', color: '#fdfaf0', letterSpacing: '-0.01em' }}>
+            Common questions.
+          </h2>
+        </div>
+        <div className="faq-list" style={{ opacity: 0 }}>
+          {FAQ_DATA.map((item, i) => (
+            <FAQItem
+              key={i} item={item}
+              isOpen={openIndex === i}
+              onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+            />
+          ))}
+          <div style={{ height: '1px', background: 'rgba(245,158,11,0.1)' }} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── CONTACT ─────────────────────────────────────────────── */
+function Contact() {
+  const ref = useRef(null)
+  const [fields, setFields] = useState({ full_name: '', email: '', phone: '', industry: '' })
+  const [formStatus, setFormStatus] = useState('idle') // idle | submitting | success | error
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+  const canSubmit = formStatus === 'idle' &&
+    fields.full_name.trim() && isValidEmail(fields.email) && fields.phone.trim() && fields.industry.trim()
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    if (name in fields) setFields(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!canSubmit) return
-    setStatus('sending')
+    setFormStatus('submitting')
     try {
-      const res = await fetch('/api/contact', {
+      const data = new FormData(e.target)
+      const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fields),
+        body: data,
+        headers: { Accept: 'application/json' },
       })
-      if (!res.ok) throw new Error('Failed')
-      setStatus('sent')
+      if (res.ok) {
+        setFormStatus('success')
+      } else {
+        setFormStatus('error')
+      }
     } catch {
-      setStatus('error')
+      setFormStatus('error')
     }
   }
 
-  const inputClass = contactInputClass
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.contact-left',  { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 75%' } })
+      gsap.fromTo('.contact-right', { opacity: 0, x: 20 },
+        { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: ref.current, start: 'top 75%' } })
+    }, ref)
+    return () => ctx.revert()
+  }, [])
 
   return (
-    <section id="contact" className="py-28 sm:py-40 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-7xl mx-auto">
-        {/* Form grid */}
-        <div className="grid lg:grid-cols-12 gap-12">
-          {/* Left */}
-          <div className="lg:col-span-5 flex flex-col justify-between">
-            <div>
-              <span className="font-mono text-xs uppercase tracking-[0.25em] text-primary">╱ Get in touch</span>
-              <h2 className="font-display font-bold text-3xl sm:text-4xl text-ink mt-4 mb-6 tracking-tight leading-tight">
-                Let's talk about your
-                <span className="block font-serif italic font-medium text-primary-light">lead pipeline.</span>
-              </h2>
-              <p className="text-muted leading-relaxed mb-10">
-                Fill out the form and I'll reply within 24 hours to schedule your free strategy call.
-              </p>
-            </div>
+    <section id="contact" ref={ref} className="relative py-24 md:py-32 px-6 md:px-14 overflow-hidden"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.06)' }}>
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(245,158,11,0.04) 0%, transparent 70%)' }} />
 
-            <div className="space-y-4">
-              {[
-                { icon: Mail, label: 'Email', value: 'dee@xephral.com', href: 'mailto:dee@xephral.com' },
-                { icon: MapPin, label: 'Location', value: 'Remote — Available Worldwide', href: null },
-                { icon: Clock, label: 'Response Time', value: 'Within 24 hours', href: null },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-surface border border-divider">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <item.icon className="h-4 w-4 text-primary" strokeWidth={2.2} />
-                  </div>
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{item.label}</p>
-                    {item.href ? (
-                      <a href={item.href} className="text-ink text-sm hover:text-primary transition-colors">{item.value}</a>
-                    ) : (
-                      <p className="text-ink text-sm">{item.value}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="max-w-6xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: '80px', alignItems: 'start' }}>
+
+          {/* Left */}
+          <div className="contact-left" style={{ opacity: 0 }}>
+            <p className="font-mono text-xs tracking-[0.22em] uppercase mb-5"
+              style={{ color: 'rgba(245,158,11,0.6)' }}>
+              Get in touch
+            </p>
+            <h2 className="font-serif italic font-medium leading-tight mb-6"
+              style={{ fontSize: 'clamp(26px, 3.2vw, 42px)', color: '#fdfaf0', letterSpacing: '-0.01em' }}>
+              Let's talk about your lead pipeline.
+            </h2>
+            <p className="font-body leading-relaxed mb-10"
+              style={{ fontSize: '15px', color: '#78716c', maxWidth: '300px' }}>
+              Fill out the form and I'll reply within 24 hours to schedule your free strategy call.
+            </p>
+            {[
+              { label: 'Email',         value: 'dee@xephral.com' },
+              { label: 'Location',      value: 'Remote — Available Worldwide' },
+              { label: 'Response time', value: 'Within 24 hours' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{
+                display: 'flex', flexDirection: 'column', gap: '3px',
+                padding: '14px 0',
+                borderTop: '1px solid rgba(245,158,11,0.08)',
+              }}>
+                <span style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '9px', letterSpacing: '0.18em',
+                  textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+                }}>{label}</span>
+                <span style={{
+                  fontFamily: '"Inter", sans-serif',
+                  fontSize: '14px', color: '#d6cfbe',
+                }}>{value}</span>
+              </div>
+            ))}
+            <div style={{ height: '1px', background: 'rgba(245,158,11,0.08)' }} />
           </div>
 
-          {/* Right — Form */}
-          <div className="lg:col-span-7">
-            <div className="bg-surface border border-divider rounded-5xl p-8 sm:p-10">
-              {status === 'sent' ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
-                    <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-                  </div>
-                  <h3 className="font-display font-bold text-2xl text-ink mb-3">Message received!</h3>
-                  <p className="text-muted leading-relaxed max-w-sm">
-                    I'll review your details and reach out within 24 hours to schedule your free strategy call.
-                  </p>
-                </div>
-              ) : status === 'error' ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
-                    <span className="text-red-400 text-2xl font-bold">!</span>
-                  </div>
-                  <h3 className="font-display font-bold text-2xl text-ink mb-3">Something went wrong</h3>
-                  <p className="text-muted leading-relaxed max-w-sm mb-6">
-                    Your message didn't send. Please email me directly at <a href="mailto:dee@xephral.com" className="text-primary hover:underline">dee@xephral.com</a>.
-                  </p>
-                  <button onClick={() => setStatus('idle')} className="text-sm text-primary hover:underline">Try again</button>
-                </div>
-              ) : (
-                <form onSubmit={onSubmit} className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <FormField label="Full Name *">
-                      <input
-                        required
-                        type="text"
-                        placeholder="Your full name"
-                        className={inputClass}
-                        value={fields.fullName}
-                        onChange={(e) => setFields((p) => ({ ...p, fullName: e.target.value }))}
-                      />
-                    </FormField>
-                    <FormField label="Email *">
-                      <input
-                        required
-                        type="email"
-                        placeholder="your@email.com"
-                        className={inputClass}
-                        value={fields.email}
-                        onChange={(e) => setFields((p) => ({ ...p, email: e.target.value }))}
-                      />
-                    </FormField>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <FormField label="Phone *">
-                      <input
-                        required
-                        type="tel"
-                        placeholder="+1 (555) 000-0000"
-                        className={inputClass}
-                        value={fields.phone}
-                        onChange={(e) => setFields((p) => ({ ...p, phone: e.target.value }))}
-                      />
-                    </FormField>
-                    <FormField label="Industry *">
-                      <input
-                        type="text"
-                        placeholder="e.g. HVAC, Dental, Roofing"
-                        className={inputClass}
-                        value={fields.industry}
-                        onChange={(e) => setFields((p) => ({ ...p, industry: e.target.value }))}
-                      />
-                    </FormField>
-                  </div>
-                  <FormField label="Message (optional)">
-                    <textarea
-                      rows={5}
-                      maxLength={5000}
-                      placeholder="Tell me about your business and the leads you're missing..."
-                      className={`${inputClass} resize-none`}
-                      value={fields.message}
-                      onChange={(e) => setFields((p) => ({ ...p, message: e.target.value }))}
+          {/* Right — form or confirmation */}
+          <div className="contact-right" style={{ opacity: 0 }}>
+            {formStatus === 'success' ? (
+              <div style={{ paddingTop: '8px' }}>
+                <div style={{
+                  height: '1px', marginBottom: '40px',
+                  background: 'linear-gradient(to right, rgba(245,158,11,0.6), rgba(245,158,11,0.1), transparent)',
+                }} />
+                <p className="font-mono text-xs tracking-[0.22em] uppercase mb-6"
+                  style={{ color: 'rgba(245,158,11,0.6)' }}>
+                  Message received
+                </p>
+                <h3 className="font-serif italic font-medium leading-tight mb-4"
+                  style={{ fontSize: 'clamp(24px, 3vw, 38px)', color: '#fdfaf0', letterSpacing: '-0.01em' }}>
+                  You'll hear from me within 24 hours.
+                </h3>
+                <p className="font-body" style={{ fontSize: '15px', color: '#78716c', lineHeight: 1.7 }}>
+                  In the meantime, feel free to reach out directly at{' '}
+                  <a href="mailto:dee@xephral.com"
+                    style={{ color: '#f59e0b', textDecoration: 'none' }}>
+                    dee@xephral.com
+                  </a>
+                </p>
+              </div>
+            ) : (
+            <form
+              onSubmit={handleSubmit}
+              style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px 40px' }}>
+                {[
+                  { name: 'full_name', label: 'Full Name *', type: 'text',  placeholder: 'Your full name' },
+                  { name: 'email',     label: 'Email *',     type: 'email', placeholder: 'your@email.com' },
+                  { name: 'phone',     label: 'Phone *',     type: 'tel',   placeholder: '+1 (555) 000-0000' },
+                  { name: 'industry',  label: 'Industry *',  type: 'text',  placeholder: 'e.g. HVAC, Dental, Roofing' },
+                ].map(f => (
+                  <div key={f.name} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '9px', letterSpacing: '0.18em',
+                      textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+                    }}>{f.label}</label>
+                    <input
+                      type={f.type} name={f.name}
+                      placeholder={f.placeholder}
+                      required
+                      value={fields[f.name]}
+                      onChange={handleChange}
+                      className="xeph-input"
                     />
-                  </FormField>
+                  </div>
+                ))}
+              </div>
 
-                  <FormField label="How did you hear about us?">
-                    <select
-                      className={inputClass}
-                      value={fields.referral}
-                      onChange={(e) => setFields((p) => ({ ...p, referral: e.target.value }))}
-                    >
-                      <option value="" disabled>Select one…</option>
-                      <option>Google Search</option>
-                      <option>YouTube</option>
-                      <option>Referral from someone I know</option>
-                      <option>Social Media</option>
-                      <option>Cold outreach</option>
-                      <option>Other</option>
-                    </select>
-                  </FormField>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '9px', letterSpacing: '0.18em',
+                  textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+                }}>Message (optional)</label>
+                <textarea
+                  name="message"
+                  placeholder="Tell me about your business and the leads you're missing..."
+                  rows={4}
+                  className="xeph-input"
+                  style={{ resize: 'none' }}
+                />
+              </div>
 
-                  <button
-                    type="submit"
-                    disabled={!canSubmit || status === 'sending'}
-                    className={`magnetic-btn w-full flex items-center justify-center gap-2 py-4 rounded-full font-semibold shadow-xl transition-all duration-300 ${
-                      canSubmit
-                        ? 'bg-primary text-white shadow-primary/30 cursor-pointer'
-                        : 'bg-primary/30 text-white/40 shadow-none cursor-not-allowed'
-                    }`}
-                  >
-                    {status === 'sending' ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Sending…
-                      </span>
-                    ) : (
-                      <>Book My Free Strategy Call <ArrowUpRight className="h-4 w-4" /></>
-                    )}
-                  </button>
-                </form>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '9px', letterSpacing: '0.18em',
+                  textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+                }}>How did you hear about us? (optional)</label>
+                <div style={{ position: 'relative' }}>
+                  <select name="source" className="xeph-select">
+                    <option value="">Select one...</option>
+                    <option value="google">Google Search</option>
+                    <option value="social">Social Media</option>
+                    <option value="referral">Referral</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <span style={{
+                    position: 'absolute', right: '2px', top: '50%', transform: 'translateY(-50%)',
+                    pointerEvents: 'none', color: 'rgba(245,158,11,0.4)',
+                    fontFamily: '"JetBrains Mono", monospace', fontSize: '10px',
+                  }}>▾</span>
+                </div>
+              </div>
+
+              {formStatus === 'error' && (
+                <p style={{
+                  fontFamily: '"Inter", sans-serif', fontSize: '13px',
+                  color: 'rgba(239,68,68,0.85)', margin: 0,
+                }}>
+                  Something went wrong. Email me directly at{' '}
+                  <a href="mailto:dee@xephral.com" style={{ color: '#f59e0b', textDecoration: 'none' }}>
+                    dee@xephral.com
+                  </a>
+                </p>
               )}
-            </div>
+
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className={canSubmit ? 'magnetic-btn' : ''}
+                style={{
+                  background: canSubmit ? '#f59e0b' : 'rgba(245,158,11,0.25)',
+                  color: canSubmit ? '#080600' : 'rgba(8,6,0,0.5)',
+                  fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: '14px',
+                  padding: '16px 32px', borderRadius: '999px',
+                  border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  width: '100%',
+                  transition: 'background 0.3s ease, color 0.3s ease',
+                }}
+              >
+                {formStatus === 'submitting' ? 'Sending...' : <>Book My Free Strategy Call <ArrowUpRight size={15} /></>}
+              </button>
+            </form>
+            )}
           </div>
         </div>
       </div>
@@ -1356,110 +1086,166 @@ function ContactForm() {
   )
 }
 
-/* ----------------------------------------------------------------
-   Footer
----------------------------------------------------------------- */
+/* ─── FOOTER ──────────────────────────────────────────────── */
 function Footer() {
   return (
-    <footer className="bg-deep border-t border-divider text-white px-6 sm:px-10 lg:px-16 py-16">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-8 mb-12">
-          {/* Brand block */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/30">
-                <Cpu className="h-4 w-4 text-white" strokeWidth={2.2} />
-              </span>
-              <span className="font-display font-bold text-lg text-white">Xephral</span>
+    <footer className="px-6 md:px-14 py-16"
+      style={{ background: '#080600', borderTop: '1px solid rgba(245,158,11,0.1)' }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="footer-grid"
+          style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '48px 40px' }}>
+
+          {/* Brand */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <XLogo className="w-5 h-5" style={{ color: '#f59e0b' }} />
+              <span style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '12px', letterSpacing: '0.16em', fontWeight: 500, color: '#fdfaf0',
+              }}>XEPHRAL</span>
             </div>
-            <p className="text-white/50 text-sm leading-relaxed max-w-xs mb-6">
+            <p style={{
+              fontFamily: '"Inter", sans-serif',
+              fontSize: '13px', lineHeight: 1.65, color: '#78716c', maxWidth: '240px',
+            }}>
               AI automation for local service businesses that can't afford to miss a lead.
             </p>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 ring-pulse" />
-              <span className="font-mono text-[11px] uppercase tracking-widest text-emerald-400">Now Taking New Clients · 2026</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <span style={{
+                width: '7px', height: '7px', borderRadius: '50%',
+                background: '#f59e0b',
+                boxShadow: '0 0 8px rgba(245,158,11,0.8)',
+                animation: 'scrollLinePulse 2s ease-in-out infinite',
+                display: 'inline-block', flexShrink: 0,
+              }} />
+              <span style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '9px', letterSpacing: '0.2em',
+                textTransform: 'uppercase', color: 'rgba(245,158,11,0.7)',
+              }}>Now taking new clients · 2026</span>
             </div>
           </div>
 
           {/* Services */}
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-5">Services</p>
-            <div className="flex flex-col gap-3">
-              {['AI Voice Agents', 'Automation Pipelines', 'Content Systems', 'CRM Integration', 'Lead Follow-Up'].map((s) => (
-                <a key={s} href="#services" className="text-white/50 text-sm hover:text-white transition-colors lift-on-hover">{s}</a>
-              ))}
-            </div>
+            <p style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '9px', letterSpacing: '0.2em',
+              textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+              marginBottom: '16px',
+            }}>Services</p>
+            {['AI Voice Agents', 'Lead Follow-Up', 'Appointment Booking', 'CRM Integration'].map(l => (
+              <a key={l} href="#services"
+                style={{
+                  display: 'block', fontFamily: '"Inter", sans-serif',
+                  fontSize: '13px', color: '#78716c', marginBottom: '10px',
+                  textDecoration: 'none', transition: 'color 0.2s ease',
+                }}
+                onMouseOver={e => e.currentTarget.style.color = '#fdfaf0'}
+                onMouseOut={e => e.currentTarget.style.color = '#78716c'}>
+                {l}
+              </a>
+            ))}
           </div>
 
           {/* Company */}
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-5">Company</p>
-            <div className="flex flex-col gap-3">
-              {[
-                { label: 'Process', href: '#process' },
-                { label: 'Results', href: '#results' },
-                { label: 'FAQ', href: '#faq' },
-                { label: 'Contact', href: '#contact' },
-              ].map((l) => (
-                <a key={l.label} href={l.href} className="text-white/50 text-sm hover:text-white transition-colors lift-on-hover">{l.label}</a>
-              ))}
-            </div>
+            <p style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '9px', letterSpacing: '0.2em',
+              textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+              marginBottom: '16px',
+            }}>Company</p>
+            {[
+              { label: 'FAQ',            href: '#faq' },
+              { label: 'Contact',        href: '#contact' },
+              { label: 'Privacy Policy', href: '/privacy' },
+              { label: 'Terms',          href: '/terms' },
+            ].map(({ label, href }) => (
+              <a key={label} href={href}
+                style={{
+                  display: 'block', fontFamily: '"Inter", sans-serif',
+                  fontSize: '13px', color: '#78716c', marginBottom: '10px',
+                  textDecoration: 'none', transition: 'color 0.2s ease',
+                }}
+                onMouseOver={e => e.currentTarget.style.color = '#fdfaf0'}
+                onMouseOut={e => e.currentTarget.style.color = '#78716c'}>
+                {label}
+              </a>
+            ))}
           </div>
 
           {/* Contact */}
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mb-5">Contact</p>
-            <div className="flex flex-col gap-3">
-              <a href="mailto:dee@xephral.com" className="text-white/50 text-sm hover:text-white transition-colors lift-on-hover">
-                dee@xephral.com
-              </a>
-              <p className="text-white/50 text-sm">Remote · Worldwide</p>
-              <p className="text-white/50 text-sm">Response within 24hrs</p>
-            </div>
+            <p style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '9px', letterSpacing: '0.2em',
+              textTransform: 'uppercase', color: 'rgba(245,158,11,0.5)',
+              marginBottom: '16px',
+            }}>Contact</p>
+            {['dee@xephral.com', 'Remote · Worldwide', 'Response within 24hrs'].map(l => (
+              <p key={l} style={{
+                fontFamily: '"Inter", sans-serif',
+                fontSize: '13px', color: '#78716c', margin: '0 0 10px 0',
+              }}>{l}</p>
+            ))}
           </div>
         </div>
 
-        <div className="border-t border-divider pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-mono text-[11px] text-white/30 uppercase tracking-widest">
-            © 2026 Xephral. All rights reserved.
+        <div style={{
+          borderTop: '1px solid rgba(245,158,11,0.06)',
+          marginTop: '48px', paddingTop: '20px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: 'rgba(120,113,108,0.5)', margin: 0 }}>
+            &copy; {new Date().getFullYear()} Xephral. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
-            <Link to="/privacy" className="font-mono text-[11px] text-white/30 hover:text-white/60 uppercase tracking-widest transition-colors">
-              Privacy
-            </Link>
-            <Link to="/terms" className="font-mono text-[11px] text-white/30 hover:text-white/60 uppercase tracking-widest transition-colors">
-              Terms
-            </Link>
-          </div>
         </div>
       </div>
     </footer>
   )
 }
 
-/* ----------------------------------------------------------------
-   App Root
----------------------------------------------------------------- */
+/* ─── APP ─────────────────────────────────────────────────── */
 export default function App() {
   useEffect(() => {
-    const id = setTimeout(() => ScrollTrigger.refresh(), 200)
-    return () => clearTimeout(id)
+    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true })
+    lenis.on('scroll', ScrollTrigger.update)
+    const tick = (time) => lenis.raf(time * 1000)
+    gsap.ticker.add(tick)
+    gsap.ticker.lagSmoothing(0)
+
+    const ease = (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+    const onAnchorClick = (e) => {
+      const anchor = e.target.closest('a[href^="#"]')
+      if (!anchor) return
+      const hash = anchor.getAttribute('href')
+      if (!hash || hash === '#') return
+      e.preventDefault()
+      lenis.scrollTo(hash, { offset: -80, duration: 1.4, easing: ease })
+    }
+    document.addEventListener('click', onAnchorClick)
+
+    return () => {
+      document.removeEventListener('click', onAnchorClick)
+      gsap.ticker.remove(tick)
+      lenis.destroy()
+    }
   }, [])
 
   return (
-    <div className="relative">
-      <div className="noise-overlay" />
+    <div style={{ minHeight: '100vh', background: '#080600', color: '#fdfaf0' }}>
+      <div className="noise-overlay" aria-hidden="true" />
       <Navbar />
       <main>
         <Hero />
-        <ToolsBar />
-        <Features />
-        <Pillars />
-        <Protocol />
-        <ServicesGrid />
-        <TrustSignals />
+        <StatsStrip />
+        <Services />
+        <HowItWorks />
+        <Capabilities />
+        <Availability />
         <FAQ />
-        <ContactForm />
+        <Contact />
       </main>
       <Footer />
     </div>
